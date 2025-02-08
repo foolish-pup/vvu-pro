@@ -1,7 +1,111 @@
+<script lang="ts" setup>
+import { type LoginFormData } from '@/api/auth';
+import { useUserStore } from '@/store/modules/user';
+
+const loginFormRef = ref();
+const loginFormData = ref<LoginFormData>({
+  userName: 'Admin',
+  password: 'abc123456',
+});
+
+const btnLoading = ref(false); // 按钮加载状态
+
+const userStore = useUserStore();
+
+// 登录处理
+const handleLogin = () => {
+  loginFormRef.value.validate().then(async ({ valid }: { valid: boolean }) => {
+    if (valid) {
+      try {
+        btnLoading.value = true;
+        await userStore.login(loginFormData.value);
+        await userStore.getInfo();
+
+        // 检查是否有上一页
+        const pages = getCurrentPages();
+        if (pages.length > 1) {
+          uni.navigateBack();
+        } else {
+          uni.reLaunch({
+            url: '/pages/strawberry/index',
+          });
+        }
+      } catch (error: any) {
+        console.log('登录失败', error.message);
+        btnLoading.value = false;
+      } finally {
+        btnLoading.value = false;
+        uni.showToast({ title: '登录成功', icon: 'success' });
+      }
+    }
+  });
+};
+
+const navigateToUserAgreement = () => {
+  uni.navigateTo({
+    url: '/pages/watermelon/settings/agreement/index',
+  });
+};
+const navigateToPrivacy = () => {
+  uni.navigateTo({
+    url: '/pages/watermelon/settings/privacy/index',
+  });
+};
+
+// 微信登录处理
+const handleWechatLogin = async () => {
+  try {
+    // 加载模态框
+    uni.showLoading({
+      title: '登录中...',
+    });
+    // 获取微信登录的临时 code
+    const { code } = await uni.login({
+      provider: 'weixin',
+    });
+
+    // 调用后端接口进行登录认证
+    const result = await userStore.loginByWechat(code);
+
+    if (result) {
+      // 获取用户信息
+      await userStore.getInfo();
+
+      uni.showToast({
+        title: '登录成功',
+        icon: 'success',
+      });
+
+      const pages = getCurrentPages();
+
+      if (pages.length > 1) {
+        uni.navigateBack();
+      } else {
+        uni.reLaunch({
+          url: '/pages/index/index',
+        });
+      }
+    }
+  } catch (error: any) {
+    uni.hideLoading();
+    console.error('微信登录失败', error);
+    uni.showToast({
+      title: error.message || '微信登录失败',
+      icon: 'none',
+    });
+  } finally {
+    uni.hideLoading();
+    uni.showToast({ title: '登录成功', icon: 'success' });
+  }
+};
+</script>
+
 <template>
   <view class="login-container">
     <view class="login-header">
       <image src="/static/images/common/logo.svg" class="w160rpx h160rpx" />
+      <text class="text-40rpx font-bold mt-8 color-[#9899ff]">食韵笺</text>
+      <text class="text-24rpx color-[#9899ffaa] mt-4">记录美食之韵，传承大宝的美食文化</text>
     </view>
 
     <view class="login-form">
@@ -28,7 +132,7 @@
           />
         </wd-cell-group>
         <view class="mt-80rpx">
-          <wd-button size="large" type="primary" block @click="handleLogin">登录</wd-button>
+          <wd-button size="large" type="primary" :loading="btnLoading" block @click="handleLogin">登录</wd-button>
         </view>
       </wd-form>
     </view>
@@ -36,11 +140,7 @@
     <view class="login-footer">
       <view class="text-center">
         <wd-divider>
-          <img
-            src="/src/static/icons/login/wx_icon.png"
-            class="w-[80rpx] h-[80rpx]"
-            @click="handleWechatLogin"
-          />
+          <img src="/src/static/icons/login/wx_icon.png" class="w-[80rpx] h-[80rpx]" @click="handleWechatLogin" />
         </wd-divider>
       </view>
       <view class="text-center mt-20rpx text-sm">
@@ -51,114 +151,21 @@
       </view>
     </view>
   </view>
+
+  <wd-toast />
 </template>
-
-<script lang="ts" setup>
-import { type LoginFormData } from "@/api/auth";
-import { useUserStore } from "@/store/modules/user";
-import { useDictStore } from "@/store/modules/dict";
-const loginFormRef = ref();
-
-const loginFormData = ref<LoginFormData>({
-  userName: "Admin",
-  password: "abc123456"
-});
-
-const userStore = useUserStore();
-const dictStore = useDictStore();
-
-// 登录处理
-const handleLogin = () => {
-  loginFormRef.value.validate().then(async ({ valid }: { valid: boolean }) => {
-    if (valid) {
-      try {
-        await userStore.login(loginFormData.value);
-        await userStore.getInfo();
-        uni.showToast({ title: "登录成功", icon: "success" });
-
-        // 检查是否有上一页
-        const pages = getCurrentPages();
-        console.log("pages", pages.length);
-        if (pages.length > 1) {
-          setTimeout(() => {
-            uni.navigateBack();
-          }, 1500);
-        } else {
-          setTimeout(() => {
-            uni.reLaunch({
-              url: "/pages/index/index",
-            });
-          }, 1500);
-        }
-      } catch (error: any) {
-        console.log("登录失败", error.message);
-      }
-    }
-  });
-};
-
-const navigateToUserAgreement = () => {
-  uni.navigateTo({
-    url: "/pages/mine/user-agreement/index",
-  });
-};
-const navigateToPrivacy = () => {
-  uni.navigateTo({
-    url: "/pages/mine/privacy/index",
-  });
-};
-
-// 微信登录处理
-const handleWechatLogin = async () => {
-  try {
-    // 获取微信登录的临时 code
-    const { code } = await uni.login({
-      provider: "weixin",
-    });
-
-    // 调用后端接口进行登录认证
-    const result = await userStore.loginByWechat(code);
-
-    if (result) {
-      // 获取用户信息
-      await userStore.getInfo();
-
-      uni.showToast({
-        title: "登录成功",
-        icon: "success",
-      });
-
-      const pages = getCurrentPages();
-
-      if (pages.length > 1) {
-        uni.navigateBack();
-      } else {
-        uni.reLaunch({
-          url: "/pages/index/index",
-        });
-      }
-    }
-  } catch (error: any) {
-    console.error("微信登录失败", error);
-    uni.showToast({
-      title: error.message || "微信登录失败",
-      icon: "none",
-    });
-  }
-};
-</script>
 
 <style lang="scss" scoped>
 .login-container {
   position: relative;
-  height: calc(100vh - 100rpx);
+  height: calc(100vh);
   background: #fff;
   .login-header {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 80rpx 0;
+    padding-top: 240rpx;
   }
   .login-form {
     width: 80%;

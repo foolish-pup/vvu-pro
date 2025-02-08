@@ -57,7 +57,7 @@ const AuthAPI = {
   logout(): Promise<void> {
     return request({
       url: `${USER_BASE_URL}/logout`,
-      method: "DELETE",
+      method: "POST",
     });
   },
 };
@@ -68,6 +68,8 @@ export default AuthAPI;
 export interface LoginResult {
   /** 访问token */
   token: string;
+  /** sessionId */
+  cookie: string;
 }
 
 export interface LoginFormData {

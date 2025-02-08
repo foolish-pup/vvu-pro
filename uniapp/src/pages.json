@@ -9,67 +9,49 @@
 
   "pages": [
     {
-      "path": "pages/index/index",
+      "path": "pages/strawberry/index",
       "style": {
         "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/work/index",
+      "path": "pages/donut/index",
       "style": {
-        "navigationBarTitleText": "工作台"
+        "navigationBarTitleText": "甜甜圈"
       }
     },
     {
-      "path": "pages/mine/index",
+      "path": "pages/watermelon/index",
       "style": {
-        "navigationBarTitleText": "我的"
+        "navigationBarTitleText": "西瓜"
       }
     },
     {
-      "path": "pages/mine/about/index",
-      "style": {
-        "navigationBarTitleText": "关于我们"
-      }
-    },
-    {
-      "path": "pages/mine/faq/index",
+      "path": "pages/watermelon/faq/index",
       "style": {
         "navigationBarTitleText": "常见问题"
       }
     },
     {
-      "path": "pages/mine/feedback/index",
-      "style": {
-        "navigationBarTitleText": "问题反馈"
-      }
-    },
-    {
-      "path": "pages/mine/settings/index",
+      "path": "pages/watermelon/settings/index",
       "style": {
         "navigationBarTitleText": "设置"
       }
     },
     {
-      "path": "pages/mine/settings/account/index",
-      "style": {
-        "navigationBarTitleText": "账号和安全"
-      }
-    },
-    {
-      "path": "pages/mine/settings/agreement/index",
+      "path": "pages/watermelon/settings/agreement/index",
       "style": {
         "navigationBarTitleText": "用户协议"
       }
     },
     {
-      "path": "pages/mine/settings/privacy/index",
+      "path": "pages/watermelon/settings/privacy/index",
       "style": {
         "navigationBarTitleText": "隐私政策"
       }
     },
     {
-      "path": "pages/mine/settings/network/index",
+      "path": "pages/watermelon/settings/network/index",
       "style": {
         "navigationBarTitleText": "网络检测"
       }
@@ -77,58 +59,15 @@
     {
       "path": "pages/login/index",
       "style": {
-        "navigationBarTitleText": "登录"
+         "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/mine/profile/index",
+      "path": "pages/watermelon/profile/index",
       "style": {
-        "navigationBarTitleText": "个人资料"
+        "navigationBarTitleText": "个人中心"
       }
     },
-
-    {
-      "path": "pages/work/user/index",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/work/log/index",
-      "style": {
-        "navigationBarTitleText": "日志管理"
-      }
-    },
-    {
-      "path": "pages/work/config/index",
-      "style": {
-        "navigationBarTitleText": "系统配置"
-      }
-    },
-    {
-      "path": "pages/work/notice/index",
-      "style": {
-        "navigationBarTitleText": "通知公告"
-      }
-    },
-    {
-      "path": "pages/work/notice/detail",
-      "style": {
-        "navigationBarTitleText": "通知详情"
-      }
-    },
-    {
-      "path": "pages/work/role/index",
-      "style": {
-        "navigationBarTitleText": "角色管理"
-      }
-    },
-    {
-      "path": "pages/work/role/assign-perm",
-      "style": {
-        "navigationBarTitleText": "角色分配权限"
-      }
-    }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
@@ -138,26 +77,26 @@
   },
   "tabBar": {
     "color": "#474747",
-    "selectedColor": "#3B8DFF",
-    "backgroundColor": "#F8F8F8",
+    "selectedColor": "#9899ff",
+    "backgroundColor": "#fff",
     "list": [
       {
-        "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-active.png"
+        "pagePath": "pages/strawberry/index",
+        "text": "草莓",
+        "iconPath": "static/images/tabbar/strawberry.png",
+        "selectedIconPath": "static/images/tabbar/strawberry.png"
       },
       {
-        "pagePath": "pages/work/index",
-        "text": "工作台",
-        "iconPath": "static/tabbar/work.png",
-        "selectedIconPath": "static/tabbar/work-active.png"
+        "pagePath": "pages/donut/index",
+        "text": "甜甜圈",
+        "iconPath": "static/images/tabbar/donut.png",
+        "selectedIconPath": "static/images/tabbar/donut.png"
       },
       {
-        "pagePath": "pages/mine/index",
-        "text": "我的",
-        "iconPath": "static/tabbar/mine.png",
-        "selectedIconPath": "static/tabbar/mine-active.png"
+        "pagePath": "pages/watermelon/index",
+        "text": "西瓜",
+        "iconPath": "static/images/tabbar/watermelon.png",
+        "selectedIconPath": "static/images/tabbar/watermelon.png"
       }
     ]
   }

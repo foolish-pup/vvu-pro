@@ -15,7 +15,7 @@ import { lastValueFrom, map } from 'rxjs';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 import { convertFlatDataToTree, convertToLocalization, omit, responseMessage } from '@/utils';
 
-import { juejinParamsDto, LoginParamsDto } from './dto/params-auth.dto';
+import { juejinParamsDto, LoginParamsDto, LoginWeChatParamsDto } from './dto/params-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -74,11 +74,70 @@ export class AuthService {
   }
 
   /**
+   * @description: 用户登录 - 微信
+   */
+  async wechatLogin(params: LoginWeChatParamsDto, session: CommonType.SessionInfo, ip: string) {
+    const chatParams: any = {
+      appid: 'wx526f29442e6f17be',
+      secret: '9cbcb6c24c76deae40bac92355fc2111', 
+      js_code: params.code,
+      grant_type: 'authorization_code',
+    };
+
+    const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${chatParams.appid}&secret=${chatParams.secret}&js_code=${chatParams.js_code}&grant_type=${chatParams.grant_type}`
+    const responseData: any = await lastValueFrom(this.httpService.get(url).pipe(map((res) => res.data)));
+    
+    const { openid, session_key, errcode } = responseData;
+
+    if (errcode) {
+      return responseMessage(null, '微信登录失败', -1);
+    }
+    console.log(openid);
+    
+    // 登录参数校验结果
+    const user = await this.validateUserOpenId(openid);
+
+    if (!user) {
+      return responseMessage(null, '账号未绑定微信，请使用用户名密码登录', -1);
+    }
+
+    // 判断用户是否禁用
+    if (user.status === Status.INACTIVE) {
+      return responseMessage(null, '该用户已被禁用', -1);
+    }
+
+    // 生成 token
+    const tokens = await this.generateTokens(user);
+
+    // 登录成功，更新用户信息
+    const userInfo = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        loginCount: { increment: 1 }, // 登录次数 + 1
+        lastLoginAt: new Date(),
+        lastIp: ip,
+        token: tokens.token,
+      },
+      include: {
+        role: true,
+        organization: true,
+        post: true,
+      },
+    });
+
+    // 存储用户信息到 session
+    session.userInfo = userInfo;
+
+    // 验证成功，返回 token
+    return responseMessage<Pick<User, 'token'>>(tokens);
+  }
+
+  /**
    * @description: 获取用户信息
    */
   async getUserInfo(session: CommonType.SessionInfo) {
     // 获取 session 用户信息
-    const userInfo = omit(session.userInfo, ['password', 'token']);
+    const userInfo = omit(session.userInfo, ['password', 'token', 'openId']);
     // 获取所有与 roleId 相关的 menuId
     const menuIds = await this.prisma.permission
       .findMany({
@@ -105,6 +164,7 @@ export class AuthService {
       .then((results) => results.map((result) => result.permission));
     return responseMessage<User>({
       ...userInfo,
+      bindWeChat: session.userInfo.openId ? 1 : 0,
       buttons: permissions,
       roles: [userInfo.role.code],
     });
@@ -123,6 +183,22 @@ export class AuthService {
     });
     if (userInfo && (await this.comparePassword(password, userInfo.password))) {
       // 如果用户名密码正确，则返回用户对象
+      return userInfo;
+    }
+    return null;
+  }
+
+  /**
+   * @description: 验证用户登录 - openid
+   */
+  async validateUserOpenId(openId: string): Promise<User | null> {
+
+    // 查询数据库中对应的用户
+    const userInfo = await this.prisma.user.findUnique({
+      where: { openId },
+    });
+    if (userInfo) {
+      // 如果找到这个openid，则返回用户对象
       return userInfo;
     }
     return null;

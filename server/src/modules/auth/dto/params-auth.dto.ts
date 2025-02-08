@@ -30,6 +30,19 @@ export class LoginParamsDto {
 }
 
 /**
+ * @description: 微信用户登录参数
+ */
+export class LoginWeChatParamsDto {
+  @ApiProperty({
+    type: String,
+    description: 'code',
+    default: '',
+  })
+  @IsNotEmpty({ message: 'code 必填' })
+  code: string;
+}
+
+/**
  * @description: 掘金文章列表
  */
 export class juejinParamsDto {

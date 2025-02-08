@@ -1,6 +1,7 @@
 const TOKEN_KEY = "app-token";
 const USER_INFO_KEY = "user-info";
 const DICT_KEY = "dict";
+const SESSION_ID = "connect.sid";
 import { type DictData } from "@/api/system/dict";
 
 // 设置 token
@@ -16,6 +17,21 @@ export function getToken(): string {
 // 清除 token
 export function clearToken() {
   uni.removeStorageSync(TOKEN_KEY);
+}
+
+// 设置 token
+export function setSessionId(sessionId: string) {
+  uni.setStorageSync(SESSION_ID, sessionId);
+}
+
+// 获取 sessionId
+export function getSessionId(): string {
+  return uni.getStorageSync(SESSION_ID) || "";
+}
+
+// 清除 sessionId
+export function clearSessionId() {
+  uni.removeStorageSync(SESSION_ID);
 }
 
 // 设置用户信息
@@ -51,6 +67,7 @@ export function clearDictCache() {
 // 清除所有缓存信息
 export function clearAll() {
   clearToken();
+  clearSessionId();
   clearUserInfo();
   clearDictCache();
 }

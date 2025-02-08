@@ -6,6 +6,7 @@
  * @Description: AppModule
  */
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { WinstonModule } from 'nest-winston';
 
@@ -25,6 +26,10 @@ import winstonLogger from './config/winston.config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env'
+    }),
     OrganazationModule,
     PostManageModule,
     AuthModule,

@@ -5,76 +5,132 @@
  * @LastEditTime: 2024-10-09 10:44:10
  * @Description: 全局入口文件
  */
-declare const module: any;
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import express from 'express';
 import session from 'express-session';
+import helmet from 'helmet';
+import compression from 'compression';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { join } from 'path';
-
-import { AllExceptionsFilter } from '@/filter/all-exception.filter'; // 全局异常过滤器
-import { HttpExceptionsFilter } from '@/filter/http-exception.filter'; // http 异常过滤器
-import { requestMiddleware } from '@/middleware/request.middleware'; // 全局请求拦截中间件
-import { ValidationPipe } from '@/pipe/validation.pipe'; // 参数校验
-
+import { AllExceptionsFilter } from '@/filter/all-exception.filter';
+import { requestMiddleware } from '@/middleware/request.middleware';
+import { ValidationPipe } from '@/pipe/validation.pipe';
 import { AppModule } from './app.module';
+
+declare const module: any;
+
+async function configureSwagger(app: NestExpressApplication) {
+  const configService: ConfigService = app.get(ConfigService);
+  const options = new DocumentBuilder()
+    .setTitle(configService.get('SWAGGER_TITLE') || 'API Documentation')
+    .setDescription(configService.get('SWAGGER_DESCRIPTION') || 'API Description')
+    .setVersion(configService.get('SWAGGER_VERSION') || '1.0')
+    .addBearerAuth()
+    .build();
+  
+  const document = SwaggerModule.createDocument(app, options);
+  SwaggerModule.setup(configService.get('SWAGGER_PATH') || 'docs', app, document);
+
+  // 仅在开发环境暴露 swagger.json
+  if (configService.get('NODE_ENV') === 'development') {
+    app.getHttpAdapter().get('/swagger.json', (req: express.Request, res: express.Response) => {
+      res.json(document);
+    });
+  }
+}
+
+async function configureSession(app: NestExpressApplication) {
+  const configService = app.get(ConfigService);
+  const isProduction = configService.get('NODE_ENV') === 'production';
+
+  app.use(
+    session({
+      secret: configService.get('SESSION_SECRET') || 'your-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: isProduction,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax',
+      },
+    }),
+  );
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const configService = app.get(ConfigService);
+  const port = configService.get('PORT') || 3000;
+  
+  const isProduction = configService.get('NODE_ENV') === 'production';
 
-  app.use(express.json()); // 用于解析 JSON 格式的请求体
-  app.use(express.urlencoded({ extended: true })); // 用于解析 URL 编码格式的请求体
+  // 安全中间件
+  if (isProduction) {
+    app.use(helmet());
+    app.use(compression());
+  }
+  
+  // CORS 配置
+  app.enableCors({
+    origin: configService.get('CORS_ORIGIN') || '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
 
-  // 替换日志器
+  // 请求体解析
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // 日志配置
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
-  // 设置信任代理
-  app.set('trust proxy', true);
+  // 代理配置
+  app.set('trust proxy', configService.get('TRUST_PROXY') || 1);
 
-  // 错误异常捕获 和 过滤处理
+  // 全局过滤器
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalFilters(new HttpExceptionsFilter());
 
-  // 全局参数校验
+  // 全局参数验证
   app.useGlobalPipes(new ValidationPipe());
 
   // 全局请求拦截中间件
-  // app.use(requestMiddleware);
+  app.use(requestMiddleware);
 
-  // 启动热重载
-  if (module.hot) {
+  // Session 配置
+  await configureSession(app);
+
+  // Swagger 配置
+  if (!isProduction) {
+    await configureSwagger(app);
+  }
+
+  // 静态文件服务
+  const rootDir = join(__dirname, '..');
+  app.use(
+    '/static',
+    express.static(join(rootDir, 'upload'), {
+      maxAge: isProduction ? '7d' : 0,
+    }),
+  );
+
+  // 热重载（仅开发环境）
+  if (module.hot && !isProduction) {
     module.hot.accept();
     module.hot.dispose(() => app.close());
   }
 
-  // 配置 session
-  app.use(
-    session({
-      secret: 'pup', // 签名
-      resave: false, // 强制保存 sseion 即使它并没有变化，默认为true
-      saveUninitialized: false, // 强制将未初始化的 session 存储
-    }),
-  );
-
-  // 配置文件访问  文件夹为静态目录，以达到可直接访问下面文件的目的
-  const rootDir = join(__dirname, '..');
-  app.use('/static', express.static(join(rootDir, '/upload')));
-
-  // 构建swagger文档
-  const options = new DocumentBuilder()
-    .setTitle('vvu 接口文档')
-    .setDescription('真正的大师永远怀着一颗学徒的心！')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('docs', app, document);
-
-   // 新增：设置 swagger.json 端点
-  app.getHttpAdapter().get('/swagger.json', (req, res) => {
-    res.json(document);
+  // 健康检查端点
+  app.getHttpAdapter().get('/health', (req: express.Request, res: express.Response) => {
+    res.status(200).json({ code: 200 });
   });
 
-  await app.listen(3000);
+  const host = configService.get<string>('HOST') || '0.0.0.0';
+  await app.listen(port, host);
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
+
 bootstrap();

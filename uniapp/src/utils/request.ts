@@ -1,4 +1,4 @@
-import { getToken, clearAll } from "@/utils/cache";
+import { getToken, setSessionId, getSessionId, clearAll } from "@/utils/cache";
 import { ResultCodeEnum } from "@/enums/ResultCodeEnum";
 
 export default function request<T>(options: UniApp.RequestOptions): Promise<T> {
@@ -15,9 +15,19 @@ export default function request<T>(options: UniApp.RequestOptions): Promise<T> {
       header: {
         ...options.header,
         Authorization: getToken() ? `Bearer ${getToken()}` : "",
+        Cookie : getSessionId() ? getSessionId() : "",
       },
       success: (response) => {
         console.log("success response", response);
+
+        // 在微信中登录获取cookie
+        if(response.header["Set-Cookie"]){ 
+          const sid = response.header["Set-Cookie"].match(/connect\.sid=([^;]+)/);
+          if (sid) {
+            setSessionId(sid[0]);
+          }
+        }
+
         const resData = response.data as ResponseData<T>;
 
         // 业务状态码 200 表示成功

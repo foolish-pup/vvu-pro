@@ -16,7 +16,7 @@ import { LoggerInterceptor } from '@/interceptor/logger.interceptor';
 import { getRealIp, responseMessage } from '@/utils';
 
 import { AuthService } from './auth.service';
-import { juejinParamsDto, LoginParamsDto, RouteExistParamsDto } from './dto/params-auth.dto';
+import { juejinParamsDto, LoginParamsDto, LoginWeChatParamsDto, RouteExistParamsDto } from './dto/params-auth.dto';
 import {
   ConstantRoutesResponseDto,
   JuejinResponseDto,
@@ -41,6 +41,16 @@ export class AuthController {
   @ApiOperation({ summary: '用户登录' })
   login(@Body() body: LoginParamsDto, @Session() session: CommonType.SessionInfo, @Req() req: Request) {
     return this.authService.login(body, session, getRealIp(req));
+  }
+
+  /**
+   * @description: 用户登录 - 微信
+   */
+  @Post('/wechat-login')
+  @ApiOkResponse({ type: LoginResponseDto })
+  @ApiOperation({ summary: '用户登录 - 微信' })
+  wechatLogin(@Body() body: LoginWeChatParamsDto, @Session() session: CommonType.SessionInfo, @Req() req: Request) {
+    return this.authService.wechatLogin(body, session, getRealIp(req));
   }
 
   /**

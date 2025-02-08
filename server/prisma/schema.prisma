@@ -139,6 +139,7 @@ model User {
   organization  Organization    @relation(fields: [orgId], references: [id])
   postId        String          // 关联的岗位 id
   post          Post            @relation(fields: [postId], references: [id])
+  openId        String?         @unique // 微信 openId
   logs          Log[]           // 操作日志
   loginCount    Int             @default(0) // 登录次数
   lastIp        String?         // 最后登录ip

@@ -8,10 +8,11 @@
 import { NextFunction, Request, Response } from 'express';
 
 import { responseMessage } from '@/utils';
-export function requestMiddleware(req: Request, res: Response, next: NextFunction) {
+export function requestMiddleware(req: Request, res: Response, next: NextFunction) {  
   if (
     req.method === 'GET' ||
     req.url.includes('/auth/login') ||
+    req.url.includes('/auth/wechat-login') ||
     req.url.includes('/auth/logout') ||
     req.url.includes('/auth/juejin') ||
     req.url.includes('/common/')
