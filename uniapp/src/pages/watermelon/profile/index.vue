@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { useToast } from 'wot-design-uni';
+
 import { useUserStore } from '@/store/modules/user';
+import { onInWeChat } from '@/utils/index';
 
 const toast = useToast();
 const userStore = useUserStore();
@@ -13,6 +15,8 @@ const bindLoading = ref(false);
 
 // 模拟微信绑定操作
 const bindWechat = async () => {
+  if (!onInWeChat()) return toast.error('请在微信内进行绑定');
+
   try {
     bindLoading.value = true;
     // 获取微信登录的临时 code
@@ -29,6 +33,8 @@ const bindWechat = async () => {
 
 // 模拟微信解绑操作
 const unbindWechat = async () => {
+  if (!onInWeChat()) return toast.error('请在微信内进行解绑');
+
   try {
     bindLoading.value = true;
     await userStore.unbindWechat();

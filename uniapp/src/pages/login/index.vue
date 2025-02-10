@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { type LoginFormData } from '@/api/auth';
 import { useUserStore } from '@/store/modules/user';
+import { onInWeChat } from '@/utils/index';
 
 const loginFormRef = ref();
 const loginFormData = ref<LoginFormData>({
@@ -53,6 +54,12 @@ const navigateToPrivacy = () => {
 
 // 微信登录处理
 const handleWechatLogin = async () => {
+  if (!onInWeChat())
+    return uni.showToast({
+      title: '请在微信内进行登录',
+      icon: 'none',
+    });
+
   try {
     // 加载模态框
     uni.showLoading({
