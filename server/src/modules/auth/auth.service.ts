@@ -77,20 +77,18 @@ export class AuthService {
    * @description: 用户登录 - 微信
    */
   async wechatLogin(params: LoginWeChatParamsDto, session: CommonType.SessionInfo, ip: string) {
-    const chatParams: any = {
-      appid: 'wx526f29442e6f17be',
-      secret: '9cbcb6c24c76deae40bac92355fc2111', 
-      js_code: params.code,
-      grant_type: 'authorization_code',
-    };
-
-    const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${chatParams.appid}&secret=${chatParams.secret}&js_code=${chatParams.js_code}&grant_type=${chatParams.grant_type}`
-    const responseData: any = await lastValueFrom(this.httpService.get(url).pipe(map((res) => res.data)));
+    const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
+    url.searchParams.append('appid', process.env.WECHAT_APP_ID);
+    url.searchParams.append('secret', process.env.WECHAT_SECRET);
+    url.searchParams.append('js_code', params.code);
+    url.searchParams.append('grant_type', 'authorization_code');
     
-    const { openid, session_key, errcode } = responseData;
+    const responseData: any = await lastValueFrom(this.httpService.get(url.toString()).pipe(map((res) => res.data)));
+    
+    const { openid, errcode, errmsg } = responseData;
 
     if (errcode) {
-      return responseMessage(null, '微信登录失败', -1);
+      return responseMessage(null, `[${errcode}] ${errmsg}`, -1);
     }
     console.log(openid);
     
@@ -137,7 +135,7 @@ export class AuthService {
    */
   async getUserInfo(session: CommonType.SessionInfo) {
     // 获取 session 用户信息
-    const userInfo = omit(session.userInfo, ['password', 'token', 'openId']);
+    const userInfo = omit(session.userInfo, ['password', 'token']);
     // 获取所有与 roleId 相关的 menuId
     const menuIds = await this.prisma.permission
       .findMany({
@@ -164,7 +162,6 @@ export class AuthService {
       .then((results) => results.map((result) => result.permission));
     return responseMessage<User>({
       ...userInfo,
-      bindWeChat: session.userInfo.openId ? 1 : 0,
       buttons: permissions,
       roles: [userInfo.role.code],
     });

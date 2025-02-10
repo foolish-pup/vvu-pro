@@ -26,7 +26,7 @@ import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '
 
 import { LoggerInterceptor } from '@/interceptor/logger.interceptor';
 
-import { UserParamsDto } from './dto/params-user.dto';
+import { UserParamsDto, BindWechatDto } from './dto/params-user.dto';
 import { ResponseSaveUserDto, ResponseUserDto } from './dto/response-user.dto';
 import { ChangePasswordDto, SaveUserDto, UpdateUserTagsDto } from './dto/save-user.dto';
 import { UserManageService } from './user-manage.service';
@@ -42,7 +42,7 @@ import { UserManageService } from './user-manage.service';
 @UseInterceptors(LoggerInterceptor)
 @UseGuards(AuthGuard('jwt'))
 export class UserManageController {
-  constructor(private readonly userManageService: UserManageService) { }
+  constructor(private readonly userManageService: UserManageService) {}
 
   /**
    * @description: 查询用户列表
@@ -116,5 +116,25 @@ export class UserManageController {
   @ApiOperation({ summary: '更改用户密码' })
   changePassword(@Body() body: ChangePasswordDto, @Session() session: CommonType.SessionInfo) {
     return this.userManageService.changePassword(body, session);
+  }
+
+  /**
+   * 绑定微信
+   */
+  @Post('bind-wechat')
+  @ApiOperation({ summary: '绑定微信' })
+  @ApiOkResponse({ type: ResponseUserDto })
+  async bindWechat(@Body() dto: BindWechatDto, @Session() session: CommonType.SessionInfo) {
+    return this.userManageService.bindWechat(dto.code, session);
+  }
+
+  /**
+   * 解绑微信
+   */
+  @Post('unbind-wechat')
+  @ApiOperation({ summary: '解绑微信' })
+  @ApiOkResponse({ type: ResponseUserDto })
+  async unbindWechat(@Session() session: CommonType.SessionInfo) {
+    return this.userManageService.unbindWechat(session);
   }
 }

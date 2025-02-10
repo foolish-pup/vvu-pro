@@ -5,8 +5,10 @@
  * @LastEditTime: 2024-08-27 14:55:38
  * @Description: UserManageService - 用户管理
  */
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
+import { lastValueFrom, map } from 'rxjs';
 
 import { RESPONSE_MSG } from '@/enums';
 import { AuthService } from '@/modules/auth/auth.service';
@@ -21,7 +23,8 @@ export class UserManageService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
-  ) { }
+    private readonly httpService: HttpService,
+  ) {}
 
   /**
    * @description: 查询用户列表
@@ -216,5 +219,65 @@ export class UserManageService {
       data: { password: hashedPassword },
     });
     return responseMessage<User>(result);
+  }
+
+  /**
+   * @description: 绑定微信
+   */
+  async bindWechat(code: string, session: CommonType.SessionInfo) {
+    // 获取微信 openid
+    const { openid, errcode, errmsg } = await this.getWechatOpenId(code);
+    if (errcode) throw new Error(`[${errcode}] ${errmsg}`);
+
+    // 检查 openid 是否已被绑定
+    const existUser = await this.prisma.user.findUnique({
+      where: { openId: openid },
+    });
+    if (existUser) {
+      return responseMessage(null, '该微信已绑定其他账号', -1);
+    }
+
+    // 更新当前用户
+    return this.updateUserOpenId(session.userInfo.id, openid, session);
+  }
+
+  /**
+   * @description: 解绑微信
+   */
+  async unbindWechat(session: CommonType.SessionInfo) {
+    return this.updateUserOpenId(session.userInfo.id, null, session);
+  }
+
+  private async getWechatOpenId(code: string) {
+    const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
+    url.searchParams.append('appid', process.env.WECHAT_APP_ID);
+    url.searchParams.append('secret', process.env.WECHAT_SECRET);
+    url.searchParams.append('js_code', code);
+    url.searchParams.append('grant_type', 'authorization_code');
+    console.log(url.toString());
+    const responseData: any = await lastValueFrom(this.httpService.get(url.toString()).pipe(map((res) => res.data)));
+    return responseData;
+  }
+
+  private async updateUserOpenId(userId: string, openId: string | null, session: CommonType.SessionInfo) {
+    try {
+      // 更新数据库
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: { openId },
+        include: { role: true, organization: true, post: true },
+      });
+
+      // 更新 session
+      Object.assign(session.userInfo, omit(user, ['password', 'token']));
+
+      return responseMessage(user);
+    } catch (error) {
+      // 处理唯一约束异常
+      if (error.code === 'P2002') {
+        return responseMessage(null, '该微信已绑定其他账号', -1);
+      }
+      return responseMessage(error, RESPONSE_MSG.ERROR, -1);
+    }
   }
 }

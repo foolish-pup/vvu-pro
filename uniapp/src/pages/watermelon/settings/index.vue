@@ -77,14 +77,15 @@ const handleClearCache = async () => {
     await uni.clearStorage();
     // 更新缓存大小显示
     await getCacheSize();
-  } catch (error) {
-    toast.error('清理失败');
-  } finally {
     clearing.value = false;
     // 关闭加载提示
     toast.close();
     // 提示清理成功
     toast.success('清理成功');
+  } catch (error) {
+    // 关闭加载提示
+    toast.close();
+    toast.error('清理失败');
   }
 };
 

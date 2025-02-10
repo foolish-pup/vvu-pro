@@ -20,6 +20,7 @@ const handleLogin = () => {
         btnLoading.value = true;
         await userStore.login(loginFormData.value);
         await userStore.getInfo();
+        btnLoading.value = false;
 
         // 检查是否有上一页
         const pages = getCurrentPages();
@@ -30,12 +31,10 @@ const handleLogin = () => {
             url: '/pages/strawberry/index',
           });
         }
+        uni.showToast({ title: '登录成功', icon: 'success' });
       } catch (error: any) {
         console.log('登录失败', error.message);
         btnLoading.value = false;
-      } finally {
-        btnLoading.value = false;
-        uni.showToast({ title: '登录成功', icon: 'success' });
       }
     }
   });
@@ -70,6 +69,7 @@ const handleWechatLogin = async () => {
     if (result) {
       // 获取用户信息
       await userStore.getInfo();
+      uni.hideLoading();
 
       uni.showToast({
         title: '登录成功',
@@ -86,16 +86,10 @@ const handleWechatLogin = async () => {
         });
       }
     }
+    uni.showToast({ title: '登录成功', icon: 'success' });
   } catch (error: any) {
     uni.hideLoading();
     console.error('微信登录失败', error);
-    uni.showToast({
-      title: error.message || '微信登录失败',
-      icon: 'none',
-    });
-  } finally {
-    uni.hideLoading();
-    uni.showToast({ title: '登录成功', icon: 'success' });
   }
 };
 </script>

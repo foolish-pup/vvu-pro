@@ -7,20 +7,36 @@ const userStore = useUserStore();
 
 const userInfo = computed(() => userStore.userInfo);
 // 新增微信绑定状态
-const isWechatBound = computed(() => userStore.userInfo?.bindWeChat || 0);
+const isWechatBound = computed(() => userStore.userInfo?.openId || 0);
 // 绑定btn loading
 const bindLoading = ref(false);
 
 // 模拟微信绑定操作
-const bindWechat = () => {
-  bindLoading.value = true;
-  toast.success('微信绑定成功');
+const bindWechat = async () => {
+  try {
+    bindLoading.value = true;
+    // 获取微信登录的临时 code
+    const { code } = await uni.login({
+      provider: 'weixin',
+    });
+    await userStore.bindWechat(code);
+    bindLoading.value = false;
+    toast.success('微信绑定成功');
+  } catch (error) {
+    bindLoading.value = false;
+  }
 };
 
 // 模拟微信解绑操作
-const unbindWechat = () => {
-  bindLoading.value = true;
-  toast.success('微信解绑成功');
+const unbindWechat = async () => {
+  try {
+    bindLoading.value = true;
+    await userStore.unbindWechat();
+    bindLoading.value = false;
+    toast.success('微信解绑成功');
+  } catch (error) {
+    bindLoading.value = false;
+  }
 };
 </script>
 

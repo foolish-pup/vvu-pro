@@ -18,12 +18,11 @@ const loginHandle = async () => {
       loadingColor: '#9899ff',
     });
     await userStore.logout();
+    
+    toast.close();
+    toast.success('退出成功');
     } catch (error) {
       toast.close();
-      toast.error('退出失败');
-    } finally {
-      toast.close();
-      toast.success('退出成功');
     }
   } else {
     uni.navigateTo({ url: '/pages/login/index' });

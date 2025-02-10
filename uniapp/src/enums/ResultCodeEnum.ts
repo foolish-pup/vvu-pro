@@ -9,7 +9,7 @@ export const enum ResultCodeEnum {
   /**
    * 错误
    */
-  ERROR = 400,
+  ERROR = -1,
 
   /**
    * 令牌无效或过期

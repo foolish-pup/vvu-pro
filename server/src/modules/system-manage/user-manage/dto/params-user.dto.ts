@@ -27,3 +27,8 @@ export class UserParamsDto extends PaginatingDTO {
   })
   status?: Status;
 }
+
+export class BindWechatDto {
+  @ApiProperty({ type: String, description: '微信临时code', default: '', required: true, })
+  code: string;
+}

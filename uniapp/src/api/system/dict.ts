@@ -65,7 +65,7 @@ const DictAPI = {
   deleteByIds(ids: string) {
     return request({
       url: `${DICT_BASE_URL}/${ids}`,
-      method: "delete",
+      method: "DELETE",
     });
   },
 

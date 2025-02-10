@@ -9,6 +9,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { responseMessage } from '@/utils';
 export function requestMiddleware(req: Request, res: Response, next: NextFunction) {  
+  if (process.env.NODE_ENV === 'development') return next();
   if (
     req.method === 'GET' ||
     req.url.includes('/auth/login') ||
